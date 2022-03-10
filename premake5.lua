@@ -58,3 +58,9 @@ project "sierpinski-triangle"
     location "src/%{prj.name}"
     files { "src/%{prj.name}/**.h", "src/%{prj.name}/**.hpp", "src/%{prj.name}/**.cpp" }
 
+project "game-of-life"
+    language "C++"
+    cppdialect "C++17"
+    location "src/%{prj.name}"
+    files { "src/%{prj.name}/**.h", "src/%{prj.name}/**.hpp", "src/%{prj.name}/**.cpp" }
+
