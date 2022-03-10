@@ -39,7 +39,7 @@ void update_board()
         }
     }
     // Save new generation to the board
-    memcpy(board, buf, BOARD_W * BOARD_H);
+    memcpy(board, buf, sizeof(buf));
 }
 
 int main()
@@ -78,6 +78,7 @@ int main()
             // Draw horizontal lines
             for (int y = 0; y <= WINDOW_H; y += SQUARE_SIZE)
                 DrawLine(0, y, WINDOW_W, y, BORDER_COLOR);
+            // Draw vertical lines
             for (int x = 0; x <= WINDOW_W; x += SQUARE_SIZE)
                 DrawLine(x, 0, x, WINDOW_H, BORDER_COLOR);
         }
