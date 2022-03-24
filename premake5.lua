@@ -64,3 +64,9 @@ project "game-of-life"
     location "src/%{prj.name}"
     files { "src/%{prj.name}/**.h", "src/%{prj.name}/**.hpp", "src/%{prj.name}/**.cpp" }
 
+project "times-table"
+    language "C++"
+    cppdialect "C++17"
+    location "src/%{prj.name}"
+    files { "src/%{prj.name}/**.h", "src/%{prj.name}/**.hpp", "src/%{prj.name}/**.cpp" }
+
