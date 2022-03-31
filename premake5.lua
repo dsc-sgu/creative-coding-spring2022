@@ -70,3 +70,8 @@ project "times-table"
     location "src/%{prj.name}"
     files { "src/%{prj.name}/**.h", "src/%{prj.name}/**.hpp", "src/%{prj.name}/**.cpp" }
 
+project "mandelbrot-set"
+    language "C++"
+    cppdialect "C++17"
+    location "src/%{prj.name}"
+    files { "src/%{prj.name}/**.h", "src/%{prj.name}/**.hpp", "src/%{prj.name}/**.cpp" }
