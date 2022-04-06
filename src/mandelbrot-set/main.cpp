@@ -6,6 +6,7 @@
 #include <string>
 #include <complex>
 #include <vector>
+#include <thread>
 
 struct v2d
 {
@@ -95,6 +96,19 @@ fix_rect(Rectangle rect)
 }
 
 void
+worker(context_t *context, const int offset, const int width, const int screen_height)
+{
+    for (int x = offset; x < offset + width; ++x)
+    {
+        for (int y = 0; y < screen_height; ++y)
+        {
+            pixel_data_t *pixel = &context->pixel_data[x][y];
+            iterate(context, pixel);
+        }
+    } 
+}
+
+void
 set_viewport(context_t *context, Rectangle rect)
 {
     v2d p0 = screen_to_local(context, v2d { rect.x, rect.y });
@@ -158,12 +172,26 @@ main(void)
         {
             ClearBackground(BLACK);
 
+            const int ncpu = std::thread::hardware_concurrency();
+            const int column_width = screen_width / ncpu;
+
+            std::vector<std::thread> threads(ncpu);
+            for (int i = 0; i < ncpu; ++i)
+            {
+                threads[i] = std::thread(&worker, &context, 
+                    i * column_width, column_width, screen_height);
+            }
+
+            for (int i = 0; i < ncpu; ++i)
+            {
+                threads[i].join();
+            }            
+
             for (int x = 0; x < screen_width; ++x)
             {
                 for (int y = 0; y < screen_height; ++y)
                 {
                     pixel_data_t *pixel = &context.pixel_data[x][y];
-                    iterate(&context, pixel);
                     DrawPixel(x, y, pixel->color);
                 }
             }
@@ -193,7 +221,7 @@ main(void)
 
         }
 
-        if (selecting)
+        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
         {
             selected_rect.width =  float(GetMouseX()) - selected_rect.x;
             selected_rect.height = float(GetMouseY()) - selected_rect.y;
@@ -202,12 +230,12 @@ main(void)
 
         if (selecting && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
         {
-            float area = selected_rect.width * selected_rect.height;
+            float area = std::abs(selected_rect.width * selected_rect.height);
             context.max_iterations *= sqrt(sqrt(log(area)));
-            set_viewport(&context, selected_rect);
+            set_viewport(&context, fix_rect(selected_rect));
         }
 
-        if (IsMouseButtonUp(MOUSE_LEFT_BUTTON))
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
         {
             selected_rect = { 0, 0, 0, 0 };
             selecting = false;
