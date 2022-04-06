@@ -6,6 +6,7 @@
 #include <string>
 #include <complex>
 #include <vector>
+#include <thread>
 
 struct v2d
 {
@@ -77,29 +78,54 @@ iterate(context_t *ctx, pixel_data_t *pixel_data)
         pixel_data->done = true;
 }
 
-int
-main(void)
+Rectangle
+fix_rect(Rectangle rect)
 {
-    const int screen_width = 800;
-    const int screen_height = 600;
+    Rectangle fixed = rect;
+    if (fixed.width < 0)
+    {
+        fixed.x += fixed.width;
+        fixed.width *= -1;
+    }
+    if (fixed.height < 0)
+    {
+        fixed.y += fixed.height;
+        fixed.height *= -1;
+    }
+    return fixed;
+}
 
-    InitWindow(screen_width, screen_height, "Creative Coding: Mandelbrot Set");
-    SetTargetFPS(60);
+void
+worker(context_t *context, const int offset, const int width, const int screen_height)
+{
+    for (int x = offset; x < offset + width; ++x)
+    {
+        for (int y = 0; y < screen_height; ++y)
+        {
+            pixel_data_t *pixel = &context->pixel_data[x][y];
+            iterate(context, pixel);
+        }
+    } 
+}
 
-    context_t context = {
-        { screen_width, screen_height }, // screen_size
-        // Bottom and top are swapped for natural Y axis direction
-        { -2, 0.5, 1, -1 }, // viewport
-        100, // max_iterations
-        std::vector(screen_width, std::vector<pixel_data_t>(screen_height)),
+void
+set_viewport(context_t *context, Rectangle rect)
+{
+    v2d p0 = screen_to_local(context, v2d { rect.x, rect.y });
+    v2d p1 = screen_to_local(context, v2d { rect.x + rect.width, rect.y + rect.height });
+    context->viewport = viewport_t {
+        p0.x,
+        p1.x,
+        p0.y,
+        p1.y,
     };
 
-    for (long double x = 0; x < context.screen_size.x; x += 1)
+    for (long double x = 0; x < context->screen_size.x; x += 1)
     {
-        for (long double y = 0; y < context.screen_size.y; y += 1)
+        for (long double y = 0; y < context->screen_size.y; y += 1)
         {
-            v2d point = screen_to_local(&context, v2d { x, y });
-            context.pixel_data[x][y] = pixel_data_t {
+            v2d point = screen_to_local(context, v2d { x, y });
+            context->pixel_data[x][y] = pixel_data_t {
                 { 0, 0 }, // z
                 { point.x, point.y }, // c
                 0, // iteration
@@ -108,7 +134,30 @@ main(void)
             };
         }
     }
+}
 
+int
+main(void)
+{
+    const int screen_width = 800;
+    const int screen_height = 600;
+    const float aspect = screen_width * 1.0 / screen_height;
+
+    InitWindow(screen_width, screen_height, "Creative Coding: Mandelbrot Set");
+    SetTargetFPS(60);
+
+    context_t context = {
+        { screen_width, screen_height }, // screen_size
+        // Bottom and top are swapped for natural Y axis direction
+        { -2, 0.5, 1.12, -1.12 }, // viewport
+        100, // max_iterations
+        std::vector(screen_width, std::vector<pixel_data_t>(screen_height)),
+    };
+
+    set_viewport(&context, { 0, 0, screen_width, screen_height });
+
+    Rectangle selected_rect = { 0, 0, 0, 0 };
+    bool selecting = false;
     while (!WindowShouldClose())
     {
         float deltatime = GetFrameTime();
@@ -123,17 +172,74 @@ main(void)
         {
             ClearBackground(BLACK);
 
+            const int ncpu = std::thread::hardware_concurrency();
+            const int column_width = screen_width / ncpu;
+
+            std::vector<std::thread> threads(ncpu);
+            for (int i = 0; i < ncpu; ++i)
+            {
+                threads[i] = std::thread(&worker, &context, 
+                    i * column_width, column_width, screen_height);
+            }
+
+            for (int i = 0; i < ncpu; ++i)
+            {
+                threads[i].join();
+            }            
+
             for (int x = 0; x < screen_width; ++x)
             {
                 for (int y = 0; y < screen_height; ++y)
                 {
                     pixel_data_t *pixel = &context.pixel_data[x][y];
-                    iterate(&context, pixel);
                     DrawPixel(x, y, pixel->color);
                 }
             }
+
+            if (selecting)
+            {
+                Rectangle fixed = fix_rect(selected_rect);
+                DrawRectangleRec(fixed, { 255, 255, 255, 50 });
+                DrawRectangleLinesEx(fixed, 1, WHITE);
+            }
+                
         }
         EndDrawing();
+
+        if (IsKeyPressed(KEY_SPACE))
+        {
+            context.viewport = { -2, 0.5, 1.12, -1.12 };
+            context.max_iterations = 100;
+            set_viewport(&context, { 0, 0, screen_width, screen_height });
+        }
+
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+        {
+            selected_rect.x = float(GetMouseX());
+            selected_rect.y = float(GetMouseY());
+            selecting = true;
+
+        }
+
+        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+        {
+            selected_rect.width =  float(GetMouseX()) - selected_rect.x;
+            selected_rect.height = float(GetMouseY()) - selected_rect.y;
+            selected_rect.height = copysign(selected_rect.width / aspect, selected_rect.height);
+        }
+
+        if (selecting && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+        {
+            float area = std::abs(selected_rect.width * selected_rect.height);
+            context.max_iterations *= sqrt(sqrt(log(area)));
+            set_viewport(&context, fix_rect(selected_rect));
+        }
+
+        if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+        {
+            selected_rect = { 0, 0, 0, 0 };
+            selecting = false;
+        }
     }
 
     CloseWindow();
