@@ -1,0 +1,12 @@
+premake5.exe
+premake5
+Makefile
+bin
+obj
+
+.DS_Store
+.vscode
+
+*.sln
+*.vcxproj
+*.vcxproj.user
