@@ -15,26 +15,25 @@ struct Turtle {
     Color color;
     float thickness;
 
-    Turtle(Vector2 pos, float angle, float thickness, Color color = BLACK) :
+    Turtle(Vector2 pos, float angle, float thickness, Color color) :
         pos(pos), angle(angle * DEG2RAD), thickness(thickness), color(color) {}
 
-    void forward(float length) {
+    void forward(float length)
+    {
         Vector2 new_pos = pos + Vector2 { cosf(-angle), sin(-angle) } * length;
         DrawLineEx(pos, new_pos, thickness, color);
         pos = new_pos;
     }
 
-    void set_pos(Vector2 pos, float angle) {
-        this->pos = pos;
-        this->angle = angle * DEG2RAD;
-    }
-
-    void operator+=(float a) {
+    void rotate(float a)
+    {
         angle += a * DEG2RAD;
     }
 
-    void operator-=(float a) {
-        angle -= a * DEG2RAD;
+    void set_pos(Vector2 pos, float angle)
+    {
+        this->pos = pos;
+        this->angle = angle * DEG2RAD;
     }
 };
 
@@ -95,11 +94,10 @@ int main()
                     turtle.forward(shift_len);
                     break;
                 case '+':
-                    x = (rand() % 100) / 300.;
-                    turtle += shift_angle + x - x / 2.;
+                    turtle.rotate(shift_angle);
                     break;
                 case '-':
-                    turtle -= shift_angle + x - x / 2.;
+                    turtle.rotate(-shift_angle);
                     break;
                 case '[':
                     states.push(State {turtle.pos, turtle.angle});
