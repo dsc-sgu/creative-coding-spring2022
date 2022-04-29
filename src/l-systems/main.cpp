@@ -3,6 +3,14 @@
 #include <cmath>
 #include <map>
 #include <stack>
+#include <iostream>
+
+float swing = 0;
+bool s_plus = true;
+float border = 1;
+float swing_steps = 80;
+float swing_shift = 0;
+float swing_accel = border * 2 / swing_steps / 10;
 
 struct State {
     Vector2 pos;
@@ -16,11 +24,11 @@ struct Turtle {
     float thickness;
 
     Turtle(Vector2 pos, float angle, float thickness, Color color) :
-        pos(pos), angle(angle * DEG2RAD), thickness(thickness), color(color) {}
+        pos(pos), angle(angle* DEG2RAD), thickness(thickness), color(color) {}
 
     void forward(float length)
     {
-        Vector2 new_pos = pos + Vector2 { cosf(-angle), sin(-angle) } * length;
+        Vector2 new_pos = pos + Vector2{ cosf(-angle), sin(-angle) } *length;
         DrawLineEx(pos, new_pos, thickness, color);
         pos = new_pos;
     }
@@ -45,13 +53,13 @@ uint8_t coloring(double x, double q, double p)
 
 int main()
 {
-    const int screenWidth  = 800;
+    const int screenWidth = 800;
     const int screenHeight = 800;
 
     InitWindow(screenWidth, screenHeight, "Creative Coding: L-systems");
     SetTargetFPS(24);
 
-    Turtle turtle(Vector2 {screenWidth / 2., screenHeight / 2.}, 90, 2, GREEN);
+    Turtle turtle(Vector2{ screenWidth / 2., screenHeight / 2. }, 90, 2, GREEN);
 
     std::stack<State> states;
     std::string axiom = "F";
@@ -73,19 +81,21 @@ int main()
         }
         axiom = new_axiom;
     }
-
+    
     while (!WindowShouldClose())
     {
-        turtle.set_pos(Vector2 {screenWidth / 2., screenHeight}, 90);
-        float x;
+        turtle.set_pos(Vector2{ screenWidth / 2., screenHeight }, 90);
+
+
         BeginDrawing();
         {
             ClearBackground(BLACK);
             for (int j = 0; j < axiom.length(); ++j) {
+
                 switch (axiom[j])
                 {
                 case 'F':
-                    turtle.color = Color {
+                    turtle.color = Color{
                         coloring(j, 1, 0),
                         coloring(j, 1, 120),
                         coloring(j, 1, 240),
@@ -94,13 +104,13 @@ int main()
                     turtle.forward(shift_len);
                     break;
                 case '+':
-                    turtle.rotate(shift_angle);
+                    turtle.rotate(shift_angle + swing * PI / 180);
                     break;
                 case '-':
-                    turtle.rotate(-shift_angle);
+                    turtle.rotate(-shift_angle + swing * PI / 180);
                     break;
                 case '[':
-                    states.push(State {turtle.pos, turtle.angle});
+                    states.push(State{ turtle.pos, turtle.angle });
                     break;
                 case ']':
                     turtle.pos = states.top().pos;
@@ -113,6 +123,29 @@ int main()
             }
         }
         EndDrawing();
+
+        if (s_plus) {
+            swing += swing_shift;
+        }
+        else {
+            swing -= swing_shift;
+        }
+
+        swing_shift += swing_accel;
+
+        if (swing > border && s_plus) {
+            s_plus = false;
+            border = (rand() % 3 + 1);
+            swing_accel = border * 2 / swing_steps / 10;
+            swing_shift *= -0.5;
+        }
+        else if (swing < -border && !s_plus){
+            s_plus = true;
+            border = (rand() % 3 + 1);
+            swing_accel = border * 2 / swing_steps / 10;
+            swing_shift *= -0.5;
+        }
+
     }
     CloseWindow();
 
