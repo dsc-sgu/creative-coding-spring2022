@@ -81,3 +81,9 @@ project "l-systems"
     cppdialect "C++17"
     location "src/%{prj.name}"
     files { "src/%{prj.name}/**.h", "src/%{prj.name}/**.hpp", "src/%{prj.name}/**.cpp" }
+
+project "raycasting"
+    language "C++"
+    cppdialect "C++17"
+    location "src/%{prj.name}"
+    files { "src/%{prj.name}/**.h", "src/%{prj.name}/**.hpp", "src/%{prj.name}/**.cpp" }
