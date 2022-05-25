@@ -2,33 +2,24 @@
 #include <raylib-ext.hpp>
 #include <algorithm>
 #include <vector>
+#include <string>
+#include <fstream>
+#include <map>
+#include <iostream>
 
-const int screenWidth = 640;
-const int screenHeight = 640;
+const int screenWidth = 720;
+const int screenHeight = 720;
 
-const int board_w = 8;
-const int board_h = 8;
+int board_w = 8;
+int board_h = 8;
 
-const int cell_size = screenWidth / board_w;
+int cell_size = screenWidth / board_w;
 
-int board[board_w][board_h] = {
-    { 1, 1, 1, 1, 1, 1, 1, 1 },
-    { 1, 0, 0, 0, 0, 0, 0, 1 },
-    { 1, 0, 2, 0, 0, 0, 1, 1 },
-    { 1, 2, 2, 0, 0, 0, 0, 1 },
-    { 1, 0, 0, 0, 0, 0, 0, 1 },
-    { 1, 0, 0, 0, 1, 0, 0, 1 },
-    { 1, 0, 1, 0, 0, 0, 0, 1 },
-    { 1, 1, 1, 1, 1, 1, 1, 1 },
-};
+std::vector<std::vector<int>> board;
+std::map<int, Image> images;
 
-Image floor_texture = LoadImage("./textures/FLOOR_1A.png");
-Image ceiling_texture = LoadImage("./textures/LIGHT_1C.png");
-Image images[] = {
-    LoadImage("./textures/TECH_1A.png"), // NULL
-    LoadImage("./textures/TECH_1A.png"),
-    LoadImage("./textures/SUPPORT_3.png"),
-};
+Image floor_texture = LoadImage("./resources/FLOOR_1A.png");
+Image ceiling_texture = LoadImage("./resources/LIGHT_1C.png");
 
 struct player_t {
     Vector2 pos;
@@ -95,7 +86,7 @@ hit_t cast_ray(Vector2 pos, float dir)
 
         if (!correct_cell(cell_hit_x, cell_hit_y))
             break;
-        if (board[cell_hit_x][cell_hit_y] != 0)
+        if (board[cell_hit_x][cell_hit_y] != -1)
             break;
     }
 
@@ -127,7 +118,7 @@ hit_t cast_ray(Vector2 pos, float dir)
 
         if (!correct_cell(cell_hit_x, cell_hit_y))
             break;
-        if (board[cell_hit_x][cell_hit_y] != 0)
+        if (board[cell_hit_x][cell_hit_y] != -1)
             break;
     }
 
@@ -147,16 +138,53 @@ check_collision(Vector2 position, float radius)
         Vector2 check = position + Vector2Rotate({ radius, 0 }, angle);
         int cell_x = check.x / cell_size;
         int cell_y = check.y / cell_size;
-        if (board[cell_x][cell_y] != 0)
+        if (board[cell_x][cell_y] != -1)
             return true;
     }
     return false;
+}
+
+void
+parse_map(std::string filename)
+{
+    int rows, cols;
+    int texture_count;
+    std::ifstream map_file(filename);
+    map_file >> rows >> cols >> texture_count;
+
+    board_w = rows;
+    board_h = cols;
+
+    if (rows > cols)
+        cell_size = screenHeight / rows;
+    else
+        cell_size = screenWidth / cols;
+    
+    for (int i = 0; i < texture_count; ++i)
+    {
+        int texture_id;
+        std::string texture_path;
+        map_file >> texture_id >> texture_path;
+        images[texture_id] = LoadImage(texture_path);
+    }
+
+    board = std::vector(rows, std::vector(cols, -1));
+    for (int i = 0; i < rows; ++i)
+    {
+        for (int j = 0; j < cols; ++j)
+        {
+            map_file >> board[i][j];
+        }
+    }
 }
 
 int main()
 {
     InitWindow(screenWidth * 2, screenHeight, "GDSC: Creative Coding");
     SetTargetFPS(60);
+
+    std::string map_filename = "./test.map";
+    parse_map(map_filename);
 
     player_t player;
     player.pos = { screenWidth / 2, screenHeight / 2 };
@@ -220,7 +248,7 @@ int main()
 
             for (int row = 0; row < board_h; ++row) {
                 for (int col = 0; col < board_w; ++col) {
-                    if (board[col][row] != 0) {
+                    if (board[col][row] != -1) {
                         DrawRectangle(col * cell_size, row * cell_size,
                             cell_size, cell_size, BLACK);
                     }

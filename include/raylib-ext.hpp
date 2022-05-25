@@ -6,6 +6,7 @@
 #endif
 
 #include <string>
+#include <iostream>
 #include <raylib.h>
 #include <raygui.h>
 #include <rlgl.h>
@@ -14,6 +15,7 @@
 extern "C" {
 #endif
 
+#define RAYMATH_STATIC_INLINE
 #include <raymath.h>
 
 #ifdef __cplusplus
@@ -32,6 +34,7 @@ Vector2& operator+=(Vector2 &v1, const Vector2 &v2) noexcept;
 Vector2& operator-=(Vector2 &v1, const Vector2 &v2) noexcept;
 Vector2& operator*=(Vector2 &v, const float &f) noexcept;
 Vector2& operator/=(Vector2 &v, const float &f);
+std::ostream &operator<<(std::ostream &out, const Vector2 &v);
 
 /* Vector3 */
 
@@ -45,6 +48,7 @@ Vector3& operator+=(Vector3 &v1, const Vector3 &v2) noexcept;
 Vector3& operator-=(Vector3 &v1, const Vector3 &v2) noexcept;
 Vector3& operator*=(Vector3 &v, const float &f) noexcept;
 Vector3& operator/=(Vector3 &v, const float &f);
+std::ostream &operator<<(std::ostream &out, const Vector3 &v);
 
 /* Vector4/Quaternion */
 
@@ -58,6 +62,7 @@ Vector4& operator+=(Vector4 &v1, const Vector4 &v2) noexcept;
 Vector4& operator-=(Vector4 &v1, const Vector4 &v2) noexcept;
 Vector4& operator*=(Vector4 &v, const float &f) noexcept;
 Vector4& operator/=(Vector4 &v, const float &f);
+std::ostream &operator<<(std::ostream &out, const Vector4 &v);
 
 /* Matrix */
 
@@ -67,6 +72,7 @@ Matrix operator*(const Matrix &m1, const Matrix &m2) noexcept;
 Matrix& operator+=(Matrix &m1, const Matrix &m2) noexcept;
 Matrix& operator-=(Matrix &m1, const Matrix &m2) noexcept;
 Matrix& operator*=(Matrix &m1, const Matrix &m2) noexcept;
+std::ostream &operator<<(std::ostream &out, const Matrix &v);
 
 /* Core */
 
@@ -339,6 +345,13 @@ operator/=(Vector2 &v, const float &f)
     return v;
 }
 
+std::ostream &
+operator<<(std::ostream &out, const Vector2 &v)
+{
+    out << "Vector2 { " << v.x << ", " << v.y << " }";
+    return out;
+}
+
 /* Vector3 */
 
 bool
@@ -419,6 +432,13 @@ operator/=(Vector3 &v, const float &f)
     v.y /= f;
     v.z /= f;
     return v;
+}
+
+std::ostream &
+operator<<(std::ostream &out, const Vector3 &v)
+{
+    out << "Vector2 { " << v.x << ", " << v.y << ", " << v.z << " }";
+    return out;
 }
 
 /* Vector4/Quaternion */
@@ -507,6 +527,16 @@ operator/=(Vector4 &v, const float &f)
     return v;
 }
 
+std::ostream &
+operator<<(std::ostream &out, const Vector4 &v)
+{
+    out << "Vector2 { " << v.x << ", " 
+                        << v.y << ", " 
+                        << v.z << ", " 
+                        << v.w << " }";
+    return out;
+}
+
 /* Matrix */
 
 Matrix 
@@ -552,6 +582,18 @@ noexcept
 {
     m1 = MatrixMultiply(m1, m2);
     return m1;
+}
+
+std::ostream &
+operator<<(std::ostream &out, const Matrix &m)
+{
+    out << "Matrix { " << std::endl;
+    out << "  " << m.m0 << ' ' << m.m4 << ' ' << m.m8 << ' ' << m.m12 << std::endl;
+    out << "  " << m.m1 << ' ' << m.m5 << ' ' << m.m9 << ' ' << m.m13 << std::endl;
+    out << "  " << m.m2 << ' ' << m.m6 << ' ' << m.m10 << ' ' << m.m14 << std::endl;
+    out << "  " << m.m3 << ' ' << m.m7 << ' ' << m.m11 << ' ' << m.m15 << std::endl;
+    out << "}";
+    return out;
 }
 
 /* Core */
